@@ -1,0 +1,679 @@
+<!--
+This file contains the main file for running the Metacognition in Design
+study using the jsPsych library 7.3.
+
+This code pertains to the Design Calibration study.
+
+Author: Pelin Tanberg
+Date: 17th November 2026
+Contact: pelin.tan@utoronto.ca
+
+Files this page loads (all in the same folder as index.html):
+  design_task.css      styles for the design task
+  fullscreen_guard.js  return-to-fullscreen prompt; logs fullscreen exits and tab switches
+  design_stim.js       6 problems, practice problem, 10 sets x 6 orders = 60 cells
+  demographics.js      screening, demographics, design expertise
+  design_task.js       instructions, practice, 3 problems, NASA-TLX
+  mai.js               19-item Metacognitive Awareness Inventory
+  nfc.js               Need for Cognition Scale (NCS-6 by default)
+  lists_and_functions/functions.js   getQueryVariable()
+
+Data are saved with DataPipe (https://pipe.jspsych.org) through the
+@jspsych/extension-pipe extension: every trial is staged as it finishes, and
+the full CSV is sent when the study ends.
+-->
+
+<!doctype html>
+<html>
+  <head>
+    <title>Design Study</title>
+    <meta charset="UTF-8" />
+
+    <!-- CSS -->
+    <link
+      href="https://unpkg.com/jspsych@7.3.4/css/jspsych.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link href="design_task.css" rel="stylesheet" type="text/css" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <!-- jsPsych packages -->
+    <script src="jspsych-7.3/dist/jspsych.js"></script>
+    <script src="jspsych-7.3/dist/plugin-html-button-response.js"></script>
+    <script src="jspsych-7.3/dist/plugin-html-keyboard-response.js"></script>
+    <script src="jspsych-7.3/dist/plugin-html-slider-response.js"></script>
+    <script src="jspsych-7.3/dist/plugin-survey-text.js"></script>
+    <script src="jspsych-7.3/dist/plugin-survey-html-form.js"></script>
+    <script src="jspsych-7.3/dist/plugin-external-html.js"></script>
+    <script src="jspsych-7.3/dist/plugin-instructions.js"></script>
+    <script src="jspsych-7.3/dist/plugin-survey-multi-select.js"></script>
+    <script src="jspsych-7.3/dist/plugin-survey-likert.js"></script>
+    <script src="jspsych-7.3/dist/plugin-fullscreen.js"></script>
+    <script src="jspsych-7.3/dist/plugin-survey-multi-choice.js"></script>
+
+    <!-- DataPipe: saves the data (loaded after jspsych.js) -->
+    <script src="https://unpkg.com/@jspsych/extension-pipe@0.2.0"></script>
+
+    <!-- Shared helpers (getQueryVariable) -->
+    <script src="lists_and_functions/functions.js"></script>
+    <!-- Left over from the offloading study; not used here.
+    <script src="lists_and_functions/countingLoops.js"></script>
+    <script src="lists_and_functions/Plugin_Timeout2.js"></script>
+    <script src="lists_and_functions/free-recall-7.js" type="text/javascript"></script>
+    -->
+
+    <!-- Study files: order matters (stimuli before the task) -->
+    <script src="fullscreen_guard.js"></script>
+    <script src="design_stim.js"></script>
+    <script src="demographics.js"></script>
+    <script src="design_task.js"></script>
+    <script src="mai.js"></script>
+    <script src="nfc.js"></script>
+
+    <style>
+      :root {
+        --ink: #1f2430;
+        --muted: #5b6472;
+        --accent: #3a5a9b;
+        --accent-dark: #2c4478;
+        --bg: #f7f8fb;
+        --card-bg: #ffffff;
+        --border: #dfe3ea;
+      }
+
+      html,
+      body {
+        background-color: var(--bg);
+        color: var(--ink);
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+          sans-serif;
+        font-size: 19px;
+        line-height: 1.6;
+      }
+
+      .jspsych-content {
+        max-width: 720px;
+      }
+
+      p {
+        margin: 0 0 1em 0;
+      }
+
+      /* Survey questions: centered block, left-aligned text */
+      #jspsych-survey-text-form,
+      #jspsych-survey-multi-choice-form,
+      #jspsych-survey-multi-select-form,
+      .jspsych-survey-text-preamble,
+      .jspsych-survey-multi-choice-preamble,
+      .jspsych-survey-multi-select-preamble {
+        width: 700px;
+        max-width: 90vw;
+        margin: 0 auto;
+        text-align: left;
+      }
+
+      #jspsych-survey-text-form textarea,
+      #jspsych-survey-text-form input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+
+      .jspsych-survey-multi-choice-question,
+      .jspsych-survey-multi-select-question {
+        margin-top: 0;
+        text-align: left;
+      }
+
+      .jspsych-btn {
+        background-color: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 22px;
+        font-size: 16px;
+        margin: 6px;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+
+      .jspsych-btn:hover {
+        background-color: var(--accent-dark);
+      }
+
+      .jspsych-btn:disabled {
+        background-color: #b7bfcc;
+        cursor: not-allowed;
+      }
+
+      textarea,
+      input[type="text"] {
+        font-family: inherit;
+        font-size: 16px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px;
+      }
+    </style>
+  </head>
+
+  <body></body>
+
+  <script>
+    /* ############################################################################
+                STUDY SETTINGS: edit these
+    ############################################################################ */
+    var STUDY_SETTINGS = {
+      DATAPIPE_EXPERIMENT_ID: "7r5QdR2wKCJi", // from the DataPipe dashboard
+      COMPLETION_URL: "https://app.prolific.com/submissions/complete?cc=COCL8AOW", // TODO: completion code
+      NO_CONSENT_URL: "https://app.prolific.com/submissions/complete?cc=XXXXXXX", // TODO: "no consent" return code
+      SCREEN_OUT_URL: "https://app.prolific.com/submissions/complete?cc=YYYYYYY", // TODO: "screened out" code from Prolific's custom screening setup
+      // Cell assignment uses DataPipe's condition assignment. In the DataPipe
+      // dashboard, turn on condition assignment and set the number of
+      // conditions to 60 (one per cell, S01_O1 ... S10_O6).
+      PILOT_MODE: false, // [OPTIONAL, pilot only] "How rushed..." item + comment box
+      FLAG_TAB_HIDDEN_S: 30, // TODO [TO SET]: flag_tab_switch if ideation time hidden exceeds this
+      FLAG_SPEEDING_MIN: 20, // TODO [TO SET]: flag_speeding if total duration is below this
+    };
+
+    /* ############################################################################
+                INITIALIZE JSPSYCH
+    ############################################################################ */
+    // ?test=... runs single sections without sending anything to DataPipe
+    var TEST_MODE = new URLSearchParams(location.search).has("test");
+
+    // Where participants go when the study ends: the completion code by
+    // default; the screen-out or no-consent code if they leave early.
+    var FINAL_REDIRECT_URL = STUDY_SETTINGS.COMPLETION_URL;
+
+    var jsPsych = initJsPsych({
+      override_safe_mode: true,
+      extensions: [
+        {
+          type: jsPsychExtensionPipe,
+          params: {
+            experiment_id: STUDY_SETTINGS.DATAPIPE_EXPERIMENT_ID,
+            filename: function () {
+              return prolific_random_id + ".csv";
+            },
+            format: "csv",
+            enabled: !TEST_MODE, // test runs never use up a DataPipe session
+            wait_message: "<p>Saving your responses. Please do not close this page.</p>",
+            done_message: "<p>Returning you to Prolific. Please do not close this page.</p>",
+            on_save: function (result) {
+              if (!result || !result.ok) {
+                // The trials staged during the study are still recovered by
+                // DataPipe as a .partial.json file.
+                console.warn("DataPipe final save failed", result);
+              }
+            },
+          },
+        },
+      ],
+      // Runs after DataPipe has sent the full data file
+      on_finish: function () {
+        if (TEST_MODE) return;
+        window.removeEventListener("beforeunload", warnBeforeLeaving);
+        setTimeout(function () {
+          window.location.href = FINAL_REDIRECT_URL;
+        }, 1500);
+      },
+    });
+
+    /* ############################################################################
+                PARTICIPANT ID COLLECTION - PROLIFIC
+    ############################################################################ */
+    var subject_id = getQueryVariable("PROLIFIC_PID");
+    var study_id = getQueryVariable("STUDY_ID");
+    var session_id = getQueryVariable("SESSION_ID");
+    var randomizer_id = jsPsych.randomization.randomID(6);
+
+    var prolific_random_id = subject_id + "_" + randomizer_id;
+
+    /* ---------- Refresh logging: count page loads per participant ---------- */
+    var n_refreshes = 0;
+    try {
+      var loadKey = "dc_loads_" + subject_id;
+      var loads = parseInt(localStorage.getItem(loadKey) || "0", 10) + 1;
+      localStorage.setItem(loadKey, String(loads));
+      n_refreshes = loads - 1;
+    } catch (e) {
+      n_refreshes = null; // storage unavailable
+    }
+
+    var STUDY_START_MS = Date.now();
+
+    jsPsych.data.addProperties({
+      subject_id: subject_id,
+      study_id: study_id,
+      session_id: session_id,
+      randomizer_id: randomizer_id,
+      n_refreshes: n_refreshes,
+    });
+
+    /* ---------- Block the browser Back button; warn before leaving ---------- */
+    history.pushState(null, "", location.href);
+    window.addEventListener("popstate", function () {
+      history.pushState(null, "", location.href);
+    });
+    function warnBeforeLeaving(e) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+
+    /* Back-up: participant types their Prolific ID */
+    var PROLIFIC_ID = {
+      type: jsPsychSurveyText,
+      questions: [
+        { prompt: "Please type your PROLIFIC ID below.", name: "prolific_id_typed", required: true },
+      ],
+      data: { trial_kind: "PROLIFIC_ID" },
+      on_finish: function (data) {
+        data.prolific_id_typed = data.response.prolific_id_typed;
+      },
+    };
+
+    /* ############################################################################
+                WELCOME PAGE & BOT CHECK
+    ############################################################################ */
+    var welcome_screen = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus:
+        "<p>Welcome to our study!</p>" +
+        "<p>Please be sure to locate yourself in a quiet area.</p>" +
+        "<p>Your full attention is required for the next 35 minutes.</p>" +
+        "<p>If possible, please use Google Chrome or Safari as your browser.</p>" +
+        "<p>Press the SPACE bar to begin.</p>",
+      choices: [" "],
+    };
+
+    var bot_check = {
+      type: jsPsychSurveyText,
+      questions: [
+        {
+          prompt:
+            "<p>Please type the sentence below in the box. When you are done, click Continue to begin the study.</p>" +
+            "<p>The quick brown fox jumps over the lazy dog</p>",
+          name: "bot_check",
+          rows: 3,
+          columns: 50,
+          required: true,
+        },
+      ],
+      button_label: "Continue",
+      data: { trial_kind: "bot_check" },
+      on_finish: function (data) {
+        data.bot_check = data.response.bot_check;
+      },
+    };
+
+    var enter_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: true,
+      data: { trial_kind: "enter_fullscreen" },
+      on_finish: function (data) {
+        data.fs_supported = FullscreenGuard.supported() ? 1 : 0;
+        FullscreenGuard.start(); // from here on, exits are logged and prompted
+      },
+    };
+
+    /* ############################################################################
+                CONSENT
+    ############################################################################
+       TODO: replace ICL_Offload.html with the REB-approved consent form.
+       If the form offers a "do not consent" option, send those participants
+       to STUDY_SETTINGS.NO_CONSENT_URL with endWithoutConsent(). */
+    var check_consent = function (elem) {
+      if (document.getElementById("consent_checkbox").checked) {
+        return true;
+      }
+      alert(
+        "If you wish to participate, you must check the box next to the statement 'Yes, I consent to the future use of my deidentified data'"
+      );
+      return false;
+    };
+
+    function endWithoutConsent() {
+      FINAL_REDIRECT_URL = STUDY_SETTINGS.NO_CONSENT_URL;
+      jsPsych.endExperiment(); // DataPipe sends the data, then on_finish redirects
+    }
+
+    var information_consent = {
+      type: jsPsychExternalHtml,
+      url: "ICL_Offload.html", // TODO: replace with the design calibration consent form
+      cont_btn: "start",
+      check_fn: check_consent,
+      data: { trial_kind: "consent" },
+      on_finish: function (data) {
+        data.consent = 1;
+      },
+    };
+
+    /* ############################################################################
+                DATA QUALITY, HONESTY ITEM AND OPTION TO WITHDRAW
+    ############################################################################ */
+    var options_yesno = ["Yes", "No"];
+    var options_use_data = [
+      "You may use my data.",
+      "I wish to withdraw my consent.",
+    ];
+
+    var data_exclusion = {
+      type: jsPsychSurveyMultiChoice,
+      questions: [
+        {
+          prompt:
+            "Did you use any AI tools or outside help during the design problems? Your answer will not affect your payment.",
+          options: options_yesno,
+          name: "self_reported_ai_use",
+          required: true,
+        },
+        {
+          prompt:
+            "Were you doing anything else while completing this task? (e.g., Netflix, music, other)",
+          options: options_yesno,
+          name: "distracted",
+          required: true,
+        },
+        {
+          prompt: "Did you follow directions to the best of your ability?",
+          options: options_yesno,
+          name: "follow_dir",
+          required: true,
+        },
+        {
+          prompt: "Do we still have your permission to use your data?",
+          options: options_use_data,
+          name: "data_use",
+          required: true,
+        },
+      ],
+      button_label: "Next",
+      data: { trial_kind: "data_exclusion" },
+      on_finish: function (data) {
+        data.self_reported_ai_use = data.response.self_reported_ai_use;
+        data.distracted = data.response.distracted;
+        data.follow_dir = data.response.follow_dir;
+        data.data_use = data.response.data_use;
+      },
+    };
+
+    /* [OPTIONAL, pilot only] */
+    var pilot_questions = {
+      timeline: [
+        {
+          type: jsPsychSurveyHtmlForm,
+          preamble: "<p><b>Pilot questions</b></p>",
+          html:
+            '<div class="rating-row"><p class="rating-label">How rushed did you feel during the design problems?</p>' +
+            '<div class="rating-scale"><span class="rating-anchor rating-anchor-low">1 = Not at all rushed</span>' +
+            [1, 2, 3, 4, 5, 6, 7].map(function (v) {
+              return '<label class="rating-option"><input type="radio" name="rushed_rating" value="' + v + '" required><span>' + v + "</span></label>";
+            }).join("") +
+            '<span class="rating-anchor rating-anchor-high">7 = Extremely rushed</span></div></div>' +
+            "<p>Any comments about the study (optional):</p>" +
+            '<textarea name="pilot_comments" rows="4" style="width:100%;box-sizing:border-box;"></textarea>',
+          button_label: "Continue",
+          data: { trial_kind: "pilot_questions" },
+          on_finish: function (data) {
+            data.rushed_rating = parseInt(data.response.rushed_rating, 10);
+            data.pilot_comments = data.response.pilot_comments;
+          },
+        },
+      ],
+      conditional_function: function () {
+        return STUDY_SETTINGS.PILOT_MODE;
+      },
+    };
+
+    /* ############################################################################
+                PARTICIPANT SUMMARY ROW (table = "participant") + QUALITY FLAGS
+    ############################################################################
+       Flags are recorded only; no one is excluded automatically. */
+    var participant_summary = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "",
+      choices: "NO_KEYS",
+      trial_duration: 50,
+      data: { trial_kind: "participant_summary" },
+      on_finish: function (data) {
+        var all = jsPsych.data.get();
+        var last = function (kind) {
+          var v = all.filter({ trial_kind: kind }).values();
+          return v.length ? v[v.length - 1] : {};
+        };
+        var mainTrials = all.filter({ table: "trial", phase: "main" }).values();
+        var mainIdeation = all.filter({ trial_kind: "design_ideation", phase: "main" }).values();
+
+        data.table = "participant";
+        data.consent = last("consent").consent || 0;
+        data.ai_check_attempts = last("ai_check").ai_check_attempts;
+        data.attention_check_pass = last("mai").attention_check_pass;
+        data.self_reported_ai_use = last("data_exclusion").self_reported_ai_use;
+        data.total_duration_s = Math.round((Date.now() - STUDY_START_MS) / 1000);
+        data.completed = 1;
+        if (STUDY_SETTINGS.PILOT_MODE) {
+          data.rushed_rating = last("pilot_questions").rushed_rating;
+          data.pilot_comments = last("pilot_questions").pilot_comments;
+        }
+
+        var hiddenMs = mainIdeation.reduce(function (s, r) { return s + (r.time_hidden_ms || 0); }, 0);
+        var pastes = all.filter({ trial_kind: "design_ideation" }).values()
+          .reduce(function (s, r) { return s + (r.paste_attempts || 0); }, 0);
+        data.flag_zero_ideas_all = mainTrials.length > 0 && mainTrials.every(function (r) { return r.n_ideas === 0; }) ? 1 : 0;
+        data.flag_attention_fail = data.attention_check_pass === 1 ? 0 : 1;
+        data.flag_ai_selfreport = data.self_reported_ai_use === "Yes" ? 1 : 0;
+        data.flag_tab_switch = hiddenMs > STUDY_SETTINGS.FLAG_TAB_HIDDEN_S * 1000 ? 1 : 0;
+        data.flag_paste = pastes > 0 ? 1 : 0;
+        data.flag_speeding = data.total_duration_s < STUDY_SETTINGS.FLAG_SPEEDING_MIN * 60 ? 1 : 0;
+
+        // Fullscreen exits and tab switches across the whole study
+        var g = FullscreenGuard.snapshot();
+        data.fs_supported = FullscreenGuard.supported() ? 1 : 0;
+        data.fs_n_exits_total = g.fs_n_exits;
+        data.fs_time_out_ms_total = g.fs_time_out_ms;
+        data.tab_n_switches_total = g.tab_n_switches;
+        data.tab_time_hidden_ms_total = g.tab_time_hidden_ms;
+        data.fs_n_exits_ideation = mainIdeation.reduce(function (s, r) { return s + (r.fs_n_exits || 0); }, 0);
+        data.fs_time_out_ms_ideation = mainIdeation.reduce(function (s, r) { return s + (r.fs_time_out_ms || 0); }, 0);
+        data.fullscreen_events_json = JSON.stringify(FullscreenGuard.log().fullscreen_events);
+        data.study_tab_events_json = JSON.stringify(FullscreenGuard.log().tab_events);
+        data.flag_fullscreen_exit_ideation = data.fs_n_exits_ideation > 0 ? 1 : 0;
+
+      },
+    };
+
+    /* ############################################################################
+                ENDING EXPERIMENT
+    ############################################################################ */
+    var end_thanks = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus:
+        "<p><b>This is the end of the study.</b></p>" +
+        "<p>Thank you for choosing to participate in our study.</p>" +
+        "<p>Press the SPACE bar to view the feedback letter.</p>",
+      choices: [" "],
+    };
+
+    var feedback_letter = {
+      type: jsPsychExternalHtml,
+      url: "FL_OffloadTest.html", // TODO: replace with the design calibration debrief
+      cont_btn: "start",
+    };
+
+    var exit_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: false,
+      delay_after: 0,
+      on_start: function () {
+        FullscreenGuard.stop(); // leaving fullscreen is expected from here
+      },
+    };
+
+    // Last screen. When it ends, the timeline is over: DataPipe sends the full
+    // data file, then on_finish (top of this script) redirects to Prolific.
+    var credit_trial = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus:
+        "<p>Thanks for your participation.</p>" +
+        "<p>Saving your responses. You will be returned to Prolific automatically.</p>",
+      choices: "NO_KEYS",
+      trial_duration: 3000,
+    };
+
+    /* ############################################################################
+                CELL ASSIGNMENT (only after screening passes)
+    ############################################################################
+       1. ?cell=S03_O4 in the URL forces a cell (testing).
+       2. Otherwise ask DataPipe for a condition number (0 to 59) and use the
+          matching cell: condition 0 = S01_O1, 1 = S01_O2, ... 59 = S10_O6.
+       3. If DataPipe cannot be reached within 5 s, draw a cell at random.
+       assignment_method ("url", "datapipe", "random") records which route was
+       used, and datapipe_condition records the number DataPipe returned.
+       Screened-out participants never reach this point, so they are never
+       given a condition. */
+    function getCell() {
+      var forced = jsPsych.data.getURLVariable("cell");
+      if (forced && CELL_IDS.indexOf(forced) !== -1) {
+        return Promise.resolve({ cell_id: forced, method: "url", condition: null });
+      }
+      if (TEST_MODE) {
+        return Promise.resolve({ cell_id: null, method: "random", condition: null });
+      }
+      var timeout = new Promise(function (resolve) {
+        setTimeout(function () { resolve(null); }, 5000);
+      });
+      var request = jsPsychExtensionPipe
+        .getCondition(STUDY_SETTINGS.DATAPIPE_EXPERIMENT_ID)
+        .catch(function (error) {
+          console.warn("DataPipe condition assignment failed; drawing a random cell", error);
+          return null;
+        });
+      return Promise.race([request, timeout]).then(function (condition) {
+        if (typeof condition === "number" && condition >= 0) {
+          return { cell_id: CELL_IDS[condition % CELL_IDS.length], method: "datapipe", condition: condition };
+        }
+        return { cell_id: null, method: "random", condition: null };
+      });
+    }
+
+    // Everything after screening. Built once the cell is known.
+    function restOfStudy(design) {
+      return {
+        timeline: [
+          enter_fullscreen,
+
+          /*** DESIGN TASK (design_task.js) ***/
+          design.instructions,
+          design.practice,
+          design.main,
+
+          /*** QUESTIONNAIRES (TLX first, while the task is fresh; MAI includes the attention check) ***/
+          design.tlx,
+          mai,
+          nfc,
+
+          /*** DEMOGRAPHICS AND DESIGN EXPERTISE (demographics.js) ***/
+          demographics,
+
+          /*** DATA QUALITY + HONESTY ITEM ***/
+          data_exclusion,
+          pilot_questions,
+          participant_summary,
+
+          /*** ENDING ***/
+          end_thanks,
+          feedback_letter,
+          exit_fullscreen,
+          credit_trial,
+        ],
+      };
+    }
+
+    var assign_and_load = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<p>Setting up the study...</p>",
+      choices: "NO_KEYS",
+      data: { trial_kind: "cell_assignment" },
+      on_load: function () {
+        getCell().then(function (cell) {
+          var design = buildDesignTimeline(cell.cell_id, cell.method);
+          jsPsych.addNodeToEndOfTimeline(restOfStudy(design));
+          jsPsych.data.addProperties({ datapipe_condition: cell.condition });
+          jsPsych.finishTrial({ cell_id: design.assignment.cell_id, assignment_method: cell.method });
+        });
+      },
+    };
+
+    /* ############################################################################
+                RUN: consent and screening first; the rest is added after
+    ############################################################################ */
+    var timeline = [
+      welcome_screen,
+      bot_check,
+      information_consent,
+      PROLIFIC_ID,
+
+      /*** SCREENING (demographics.js): screened-out participants return to Prolific here ***/
+      screening,
+
+      /*** Passed: assign a cell, then load the task, questionnaires and ending ***/
+      assign_and_load,
+    ];
+
+    /* ############################################################################
+                TEST MODE: run only the sections you name in the URL
+    ############################################################################
+       Add ?test= to the address, with section names separated by commas:
+         index.html?test=mai
+         index.html?test=mai,nfc
+         index.html?test=practice,main&cell=S03_O4
+       Sections: screening, instructions, practice, main, tlx, mai, nfc,
+                 demographics, data_exclusion
+       Nothing else runs (no welcome, consent, fullscreen or ending), and the
+       data are shown on screen at the end. Without ?test= the full study runs. */
+    var TEST_SECTIONS = jsPsych.data.getURLVariable("test");
+
+    if (TEST_SECTIONS) {
+      window.removeEventListener("beforeunload", warnBeforeLeaving);
+      var testCell = jsPsych.data.getURLVariable("cell");
+      var testDesign = buildDesignTimeline(CELL_IDS.indexOf(testCell) !== -1 ? testCell : null, "test");
+      var SECTIONS = {
+        screening: screening,
+        instructions: testDesign.instructions,
+        practice: testDesign.practice,
+        main: testDesign.main,
+        tlx: testDesign.tlx,
+        mai: mai,
+        nfc: nfc,
+        demographics: demographics,
+        data_exclusion: data_exclusion,
+      };
+      var testTimeline = TEST_SECTIONS.split(",").map(function (name) {
+        return SECTIONS[name.trim()];
+      }).filter(Boolean);
+      testTimeline.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "",
+        choices: "NO_KEYS",
+        trial_duration: 10,
+        on_finish: function () {
+          setTimeout(function () { jsPsych.data.displayData("csv"); }, 50);
+        },
+      });
+      jsPsych.run(testTimeline);
+    } else if (STUDY_SETTINGS.DATAPIPE_EXPERIMENT_ID.indexOf("REPLACE") === 0) {
+      // Safety check: never run a real session that cannot save its data
+      document.body.innerHTML =
+        "<p>Study configuration incomplete: add the DataPipe experiment ID in STUDY_SETTINGS.</p>";
+    } else {
+      jsPsych.run(timeline);
+    }
+  </script>
+</html>

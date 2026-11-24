@@ -1,0 +1,445 @@
+/* Design calibration task styles. Link in <head> after jspsych.css:
+   <link href="design_task.css" rel="stylesheet" type="text/css" /> */
+
+/* Centered 700px column, left-aligned text (same layout as the survey questions).
+   Plain message and instruction screens stay centered. */
+#jspsych-survey-html-form,
+.jspsych-survey-html-form-preamble,
+.task-left {
+  width: 700px;
+  max-width: 90vw;
+  margin: 0 auto;
+  text-align: left;
+}
+
+/* Problem card */
+.design-problem {
+  background-color: var(--card-bg, #fff);
+  border: 1px solid var(--border, #dfe3ea);
+  border-radius: 10px;
+  padding: 20px 28px;
+  margin-bottom: 20px;
+}
+.design-opening {
+  color: var(--muted, #5b6472);
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.design-problem-text {
+  font-size: 21px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Confidence sliders */
+.conf-item {
+  margin-bottom: 28px;
+}
+.conf-hint {
+  color: var(--muted, #5b6472);
+  font-size: 15px;
+}
+.conf-slider {
+  width: 100%;
+}
+.conf-anchors {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--muted, #5b6472);
+  line-height: 1.3;
+}
+.conf-anchors span:last-child {
+  text-align: right;
+}
+.conf-value {
+  font-weight: 600;
+  color: var(--ink, #1f2430);
+  align-self: center;
+}
+
+/* Problem label ("Problem 2 of 4") at the top of every page of a problem */
+.problem-label {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--muted, #5b6472);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+/* Ideation: "1 minute left." banner. Hidden until 2:00, never blocks typing */
+.idea-reminder {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 16px;
+  text-align: center;
+  font-size: 17px;
+  font-weight: 600;
+  background-color: #fff4d6;
+  color: #6b4e00;
+  border-bottom: 1px solid #f0d58c;
+  pointer-events: none; /* clicks pass through to the page */
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  z-index: 10;
+}
+.idea-reminder-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+.idea-instructions {
+  font-size: 16px;
+}
+.idea-box {
+  margin-bottom: 14px;
+}
+.idea-box label {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.idea-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.paste-msg {
+  visibility: hidden;
+  color: #b00020;
+  font-size: 15px;
+}
+
+/* Self-ratings */
+.rating-progress {
+  color: var(--muted, #5b6472);
+  font-size: 15px;
+}
+.idea-card {
+  background-color: var(--card-bg, #fff);
+  border: 1px solid var(--border, #dfe3ea);
+  border-radius: 10px;
+  padding: 16px 22px;
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+}
+.rating-row {
+  margin-bottom: 22px;
+}
+.rating-label {
+  margin-bottom: 6px;
+}
+.rating-scale {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rating-anchor {
+  flex: 1 1 0;
+  font-size: 14px;
+  color: var(--muted, #5b6472);
+  line-height: 1.3;
+}
+.rating-anchor-high {
+  text-align: right;
+}
+.rating-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+/* Effort and difficulty (9-point items) */
+.design-problem-recap {
+  font-weight: 600;
+}
+.nine-point-item {
+  margin-bottom: 24px;
+}
+.nine-point-option {
+  display: block;
+  font-size: 16px;
+  margin: 2px 0;
+  cursor: pointer;
+}
+
+/* Instruction lists: the list block sits centered, its lines read left to right */
+.instr-list {
+  display: inline-block;
+  text-align: left;
+  margin: 0 auto 1em auto;
+}
+.instr-list li {
+  margin-bottom: 8px;
+}
+
+/* Sliders: start at 50; the track fills from the left up to the handle.
+   --fill is updated by design_task.js as the slider moves. */
+.conf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    to right,
+    var(--accent, #3a5a9b) 0%,
+    var(--accent, #3a5a9b) var(--fill, 50%),
+    #d7dce4 var(--fill, 50%),
+    #d7dce4 100%
+  );
+  outline: none;
+  cursor: pointer;
+  margin: 14px 0 8px 0;
+}
+.conf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent, #3a5a9b);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--accent, #3a5a9b);
+}
+.conf-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent, #3a5a9b);
+  border: 2px solid #fff;
+}
+.conf-slider:focus-visible {
+  box-shadow: 0 0 0 3px rgba(58, 90, 155, 0.3);
+}
+.conf-value:empty::before {
+  content: "Move the slider";
+  font-weight: 400;
+  color: var(--muted, #5b6472);
+}
+.conf-group-lead {
+  margin-top: 8px;
+}
+
+/* Definitions reminder on confidence and rating screens: one paragraph each */
+.definitions-reminder {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink, #1f2430);
+  background-color: #eef1f6;
+  border-left: 3px solid var(--accent, #3a5a9b);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+.definitions-reminder p {
+  margin: 0 0 8px 0;
+}
+.definitions-reminder p:last-child {
+  margin-bottom: 0;
+}
+.definitions-reminder .definitions-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted, #5b6472);
+  margin-bottom: 6px;
+}
+
+/* [OPTIONAL] "I've run out of ideas" checkbox */
+.out-of-ideas {
+  display: block;
+  font-size: 16px;
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.number-input {
+  width: 80px;
+}
+.error-text {
+  color: #b00020;
+}
+
+/* Fullscreen guard: blocking overlay (outside ideation) */
+.fs-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(247, 248, 251, 0.97);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+.fs-overlay.fs-visible {
+  display: flex;
+}
+.fs-overlay-box {
+  background: #fff;
+  border: 1px solid var(--border, #dfe3ea);
+  border-radius: 10px;
+  padding: 28px 36px;
+  text-align: center;
+}
+.fs-overlay-box p {
+  text-align: center;
+}
+
+/* Fullscreen guard: non-blocking banner (during ideation) */
+.fs-banner {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 8px 16px;
+  background: #fde8e8;
+  border-top: 1px solid #f3b4b4;
+  color: #7a1c1c;
+  font-size: 16px;
+  font-weight: 600;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.fs-banner.fs-visible {
+  display: flex;
+}
+.fs-banner .jspsych-btn {
+  margin: 0;
+}
+
+/* "Add another idea" button under the idea boxes */
+.add-idea-btn {
+  margin: 4px 0 12px 0;
+}
+
+/* MAI and NCS-6 (survey-likert): larger, easier-to-read text.
+   The plugin injects 16px / 14px sizes into the page; these selectors are
+   more specific so they win. */
+#jspsych-survey-likert-form {
+  width: 700px;
+  max-width: 90vw;
+  margin: 0 auto;
+}
+#jspsych-survey-likert-form .jspsych-survey-likert-statement {
+  font-size: 19px;
+  line-height: 1.45;
+  padding-top: 32px;
+  margin-bottom: 14px;
+  text-align: left;
+  color: var(--ink, #1f2430);
+}
+#jspsych-survey-likert-form .jspsych-survey-likert-opts {
+  font-size: 16px;
+  line-height: 1.3em;
+}
+#jspsych-survey-likert-form .jspsych-survey-likert-opt-label {
+  line-height: 1.3em;
+  color: var(--ink, #1f2430);
+  cursor: pointer;
+}
+#jspsych-survey-likert-form .jspsych-survey-likert-opts li input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.jspsych-survey-likert-preamble {
+  width: 700px;
+  max-width: 90vw;
+  margin: 0 auto;
+  text-align: left;
+}
+#jspsych-survey-likert-form .jspsych-survey-likert-opts li {
+  padding: 0 6px;
+  box-sizing: border-box;
+}
+
+/* ---------- Questionnaire grid (MAI, NCS-6) ---------- */
+.q-grid {
+  width: 100%;
+  table-layout: fixed; /* equal-width answer columns */
+  border-collapse: collapse;
+  margin: 8px 0 20px 0;
+  font-size: 17px;
+  line-height: 1.4;
+}
+.q-grid thead th {
+  position: sticky; /* header stays visible while scrolling */
+  top: 0;
+  z-index: 2;
+  background: var(--bg, #f7f8fb);
+  border-bottom: 2px solid var(--border, #dfe3ea);
+  padding: 10px 3px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.25;
+  color: var(--ink, #1f2430);
+  text-align: center;
+  vertical-align: bottom;
+}
+.q-grid .grid-statement-head {
+  width: 35%;
+}
+.q-grid .grid-option-head {
+  width: 13%;
+  overflow-wrap: break-word; /* last resort on very narrow screens: never cut a label off */
+}
+.q-grid .grid-statement {
+  text-align: left;
+  padding: 12px 12px 12px 10px;
+  vertical-align: middle;
+}
+.q-grid .grid-option {
+  text-align: center;
+  vertical-align: middle;
+  padding: 0;
+}
+.q-grid tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+.q-grid tbody tr:nth-child(even) {
+  background: #eef1f6;
+}
+.q-grid tbody tr:hover {
+  background: #e2e8f3;
+}
+.q-grid tbody tr:has(input:checked) .grid-statement {
+  color: var(--muted, #5b6472); /* answered rows fade slightly */
+}
+/* the whole cell is clickable, not just the small circle */
+.q-grid .grid-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  cursor: pointer;
+}
+.q-grid .grid-cell input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--accent, #3a5a9b);
+}
+
+/* Questionnaire grid pages are wider than the rest of the study (880px
+   instead of 700px) so the answer labels fit without breaking words. */
+.jspsych-content:has(.q-grid) {
+  max-width: 900px;
+}
+#jspsych-survey-html-form:has(.q-grid),
+.jspsych-content:has(.q-grid) .jspsych-survey-html-form-preamble {
+  width: 880px;
+  max-width: 94vw;
+}
