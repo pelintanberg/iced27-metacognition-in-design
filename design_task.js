@@ -708,7 +708,7 @@ function buildDesignTimeline(cellId, assignmentMethod) {
   var general_instructions = {
     type: jsPsychInstructions,
     pages: [
-      "<p>In this study you will work on <b>3 short design problems</b>, plus 1 practice problem first.</p>" +
+      "<p>In this study you will work on <b>3 short design problems</b>.</p>" +
         "<p>For each problem you will:</p>" +
         '<ol class="instr-list">' +
         "<li>Read the problem.</li>" +
@@ -789,10 +789,10 @@ function buildDesignTimeline(cellId, assignmentMethod) {
         }).join("") +
         "</ul>" +
         "<p>A short reminder of these definitions appears on every rating screen.</p>" +
-        "<p>First, you will complete <b>one practice problem</b> to get used to the screens.</p>"
+        "<p>When you are ready, start the first problem.</p>"
       );
     },
-    choices: ["Start the practice"],
+    choices: ["Start the first problem"],
     data: { trial_kind: "design_definitions" },
   };
 

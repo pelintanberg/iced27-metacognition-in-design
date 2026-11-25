@@ -168,7 +168,7 @@ the full CSV is sent when the study ends.
     ############################################################################ */
     var STUDY_SETTINGS = {
       DATAPIPE_EXPERIMENT_ID: "7r5QdR2wKCJi", // from the DataPipe dashboard
-      COMPLETION_URL: "https://app.prolific.com/submissions/complete?cc=COCL8AOW", // TODO: completion code
+      COMPLETION_URL: "https://app.prolific.com/submissions/complete?cc=C1DFJHIW", // completion code
       NO_CONSENT_URL: "https://app.prolific.com/submissions/complete?cc=XXXXXXX", // TODO: "no consent" return code
       SCREEN_OUT_URL: "https://app.prolific.com/submissions/complete?cc=YYYYYYY", // TODO: "screened out" code from Prolific's custom screening setup
       // Cell assignment uses DataPipe's condition assignment. In the DataPipe
@@ -176,7 +176,7 @@ the full CSV is sent when the study ends.
       // conditions to 60 (one per cell, S01_O1 ... S10_O6).
       PILOT_MODE: false, // [OPTIONAL, pilot only] "How rushed..." item + comment box
       FLAG_TAB_HIDDEN_S: 30, // TODO [TO SET]: flag_tab_switch if ideation time hidden exceeds this
-      FLAG_SPEEDING_MIN: 20, // TODO [TO SET]: flag_speeding if total duration is below this
+      FLAG_SPEEDING_MIN: 12, // TODO [TO SET]: flag_speeding if total duration is below this
     };
 
     /* ############################################################################
@@ -226,6 +226,13 @@ the full CSV is sent when the study ends.
     /* ############################################################################
                 PARTICIPANT ID COLLECTION - PROLIFIC
     ############################################################################ */
+    // Reads a parameter from the link. URLSearchParams tolerates text such as
+    // {{%PROLIFIC_PID%}}, which made jsPsych's own reader crash the page.
+    function urlParam(name) {
+      try { return new URLSearchParams(window.location.search).get(name); }
+      catch (e) { return null; }
+    }
+
     var subject_id = getQueryVariable("PROLIFIC_PID");
     var study_id = getQueryVariable("STUDY_ID");
     var session_id = getQueryVariable("SESSION_ID");
@@ -613,7 +620,7 @@ the full CSV is sent when the study ends.
        Screened-out participants never reach this point, so they are never
        given a condition. */
     function getCell() {
-      var forced = jsPsych.data.getURLVariable("cell");
+      var forced = urlParam("cell");
       if (forced && CELL_IDS.indexOf(forced) !== -1) {
         return Promise.resolve({ cell_id: forced, method: "url", condition: null });
       }
@@ -645,7 +652,6 @@ the full CSV is sent when the study ends.
 
           /*** DESIGN TASK (design_task.js) ***/
           design.instructions,
-          design.practice,
           design.main,
 
           /*** QUESTIONNAIRES (TLX first, while the task is fresh; MAI includes the attention check) ***/
@@ -713,11 +719,11 @@ the full CSV is sent when the study ends.
                  demographics, data_exclusion
        Nothing else runs (no welcome, consent, fullscreen or ending), and the
        data are shown on screen at the end. Without ?test= the full study runs. */
-    var TEST_SECTIONS = jsPsych.data.getURLVariable("test");
+    var TEST_SECTIONS = urlParam("test");
 
     if (TEST_SECTIONS) {
       window.removeEventListener("beforeunload", warnBeforeLeaving);
-      var testCell = jsPsych.data.getURLVariable("cell");
+      var testCell = urlParam("cell");
       var testDesign = buildDesignTimeline(CELL_IDS.indexOf(testCell) !== -1 ? testCell : null, "test");
       var SECTIONS = {
         screening: screening,
