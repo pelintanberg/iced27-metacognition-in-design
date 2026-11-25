@@ -243,8 +243,8 @@ var screened_out = {
       type: jsPsychHtmlKeyboardResponse,
       stimulus:
         "<p><b>Thank you for your interest in this study.</b></p>" +
-        "<p>Based on your answers, you are not eligible to take part. " +
-        "You will be returned to Prolific in a few seconds and paid for the questions you answered.</p>",
+        "<p>Based on your answers, you are not eligible to take part in our study. " +
+        "You will be returned to Prolific in a few seconds and <b> are asked to return your submission </b>.</p>",
       choices: "NO_KEYS",
       data: { trial_kind: "screened_out", screened_out: 1 },
       on_load: function () {
