@@ -169,8 +169,10 @@ the full CSV is sent when the study ends.
     var STUDY_SETTINGS = {
       DATAPIPE_EXPERIMENT_ID: "7r5QdR2wKCJi", // from the DataPipe dashboard
       COMPLETION_URL: "https://app.prolific.com/submissions/complete?cc=C1DFJHIW", // completion code
-      NO_CONSENT_URL: "https://app.prolific.com/submissions/complete?cc=XXXXXXX", // TODO: "no consent" return code
-      SCREEN_OUT_URL: "https://app.prolific.com/submissions/complete?cc=YYYYYYY", // TODO: "screened out" code from Prolific's custom screening setup
+      // No Prolific codes exist for these two groups, so they are not redirected.
+      // They are shown RETURN_MESSAGE and asked to return the study on Prolific.
+      NO_CONSENT_URL: null,
+      SCREEN_OUT_URL: null,
       // Cell assignment uses DataPipe's condition assignment. In the DataPipe
       // dashboard, turn on condition assignment and set the number of
       // conditions to 60 (one per cell, S01_O1 ... S10_O6).
@@ -188,6 +190,12 @@ the full CSV is sent when the study ends.
     // Where participants go when the study ends: the completion code by
     // default; the screen-out or no-consent code if they leave early.
     var FINAL_REDIRECT_URL = STUDY_SETTINGS.COMPLETION_URL;
+    var RETURN_MESSAGE =
+      "<div style='max-width:640px;margin:15vh auto;font-size:18px;line-height:1.6;text-align:left;'>" +
+      "<p><b>Thank you for your time.</b></p>" +
+      "<p>Please <b>return this study on Prolific</b>: go back to the Prolific tab and click " +
+      "<b>\"Stop without completing\"</b> (or \"Return submission\").</p>" +
+      "<p>Please do not enter a completion code. You can now close this page.</p></div>";
 
     var jsPsych = initJsPsych({
       override_safe_mode: true,
@@ -202,7 +210,7 @@ the full CSV is sent when the study ends.
             format: "csv",
             enabled: !TEST_MODE, // test runs never use up a DataPipe session
             wait_message: "<p>Saving your responses. Please do not close this page.</p>",
-            done_message: "<p>Returning you to Prolific. Please do not close this page.</p>",
+            done_message: "<p>Your responses have been saved. Please do not close this page yet.</p>",
             on_save: function (result) {
               if (!result || !result.ok) {
                 // The trials staged during the study are still recovered by
@@ -218,7 +226,12 @@ the full CSV is sent when the study ends.
         if (TEST_MODE) return;
         window.removeEventListener("beforeunload", warnBeforeLeaving);
         setTimeout(function () {
-          window.location.href = FINAL_REDIRECT_URL;
+          if (FINAL_REDIRECT_URL) {
+            window.location.href = FINAL_REDIRECT_URL;
+          } else {
+            // Screened out or no consent: no code, ask them to return the study
+            document.body.innerHTML = RETURN_MESSAGE;
+          }
         }, 1500);
       },
     });
@@ -370,7 +383,7 @@ the full CSV is sent when the study ends.
           type: jsPsychHtmlKeyboardResponse,
           stimulus:
             "<div class='task-left'><p>You have chosen not to participate. " +
-            "Thank you for your time.</p><p>You will be returned to Prolific in a moment.</p></div>",
+            "Thank you for your time.</p><p>One moment, please do not close this page.</p></div>",
           choices: "NO_KEYS",
           data: { trial_kind: "no_consent" },
           on_load: function () {
