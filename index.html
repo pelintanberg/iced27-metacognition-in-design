@@ -168,12 +168,9 @@ the full CSV is sent when the study ends.
     ############################################################################ */
     var STUDY_SETTINGS = {
       DATAPIPE_EXPERIMENT_ID: "7r5QdR2wKCJi", // from the DataPipe dashboard
-      COMPLETION_URL:
-        "https://app.prolific.com/submissions/complete?cc=COCL8AOW", // TODO: completion code
-      NO_CONSENT_URL:
-        "https://app.prolific.com/submissions/complete?cc=XXXXXXX", // TODO: "no consent" return code
-      SCREEN_OUT_URL:
-        "https://app.prolific.com/submissions/complete?cc=YYYYYYY", // TODO: "screened out" code from Prolific's custom screening setup
+      COMPLETION_URL: "https://app.prolific.com/submissions/complete?cc=COCL8AOW", // TODO: completion code
+      NO_CONSENT_URL: "https://app.prolific.com/submissions/complete?cc=XXXXXXX", // TODO: "no consent" return code
+      SCREEN_OUT_URL: "https://app.prolific.com/submissions/complete?cc=YYYYYYY", // TODO: "screened out" code from Prolific's custom screening setup
       // Cell assignment uses DataPipe's condition assignment. In the DataPipe
       // dashboard, turn on condition assignment and set the number of
       // conditions to 60 (one per cell, S01_O1 ... S10_O6).
@@ -204,10 +201,8 @@ the full CSV is sent when the study ends.
             },
             format: "csv",
             enabled: !TEST_MODE, // test runs never use up a DataPipe session
-            wait_message:
-              "<p>Saving your responses. Please do not close this page.</p>",
-            done_message:
-              "<p>Returning you to Prolific. Please do not close this page.</p>",
+            wait_message: "<p>Saving your responses. Please do not close this page.</p>",
+            done_message: "<p>Returning you to Prolific. Please do not close this page.</p>",
             on_save: function (result) {
               if (!result || !result.ok) {
                 // The trials staged during the study are still recovered by
@@ -274,11 +269,7 @@ the full CSV is sent when the study ends.
     var PROLIFIC_ID = {
       type: jsPsychSurveyText,
       questions: [
-        {
-          prompt: "Please type your PROLIFIC ID below.",
-          name: "prolific_id_typed",
-          required: true,
-        },
+        { prompt: "Please type your PROLIFIC ID below.", name: "prolific_id_typed", required: true },
       ],
       data: { trial_kind: "PROLIFIC_ID" },
       on_finish: function (data) {
@@ -294,7 +285,7 @@ the full CSV is sent when the study ends.
       stimulus:
         "<p>Welcome to our study!</p>" +
         "<p>Please be sure to locate yourself in a quiet area.</p>" +
-        "<p>Your full attention is required for the next 30 minutes.</p>" +
+        "<p>Your full attention is required for the next 35 minutes.</p>" +
         "<p>If possible, please use Google Chrome or Safari as your browser.</p>" +
         "<p>Press the SPACE bar to begin.</p>",
       choices: [" "],
@@ -443,17 +434,9 @@ the full CSV is sent when the study ends.
           html:
             '<div class="rating-row"><p class="rating-label">How rushed did you feel during the design problems?</p>' +
             '<div class="rating-scale"><span class="rating-anchor rating-anchor-low">1 = Not at all rushed</span>' +
-            [1, 2, 3, 4, 5, 6, 7]
-              .map(function (v) {
-                return (
-                  '<label class="rating-option"><input type="radio" name="rushed_rating" value="' +
-                  v +
-                  '" required><span>' +
-                  v +
-                  "</span></label>"
-                );
-              })
-              .join("") +
+            [1, 2, 3, 4, 5, 6, 7].map(function (v) {
+              return '<label class="rating-option"><input type="radio" name="rushed_rating" value="' + v + '" required><span>' + v + "</span></label>";
+            }).join("") +
             '<span class="rating-anchor rating-anchor-high">7 = Extremely rushed</span></div></div>' +
             "<p>Any comments about the study (optional):</p>" +
             '<textarea name="pilot_comments" rows="4" style="width:100%;box-sizing:border-box;"></textarea>',
@@ -487,47 +470,29 @@ the full CSV is sent when the study ends.
           return v.length ? v[v.length - 1] : {};
         };
         var mainTrials = all.filter({ table: "trial", phase: "main" }).values();
-        var mainIdeation = all
-          .filter({ trial_kind: "design_ideation", phase: "main" })
-          .values();
+        var mainIdeation = all.filter({ trial_kind: "design_ideation", phase: "main" }).values();
 
         data.table = "participant";
         data.consent = last("consent").consent || 0;
         data.ai_check_attempts = last("ai_check").ai_check_attempts;
         data.attention_check_pass = last("mai").attention_check_pass;
         data.self_reported_ai_use = last("data_exclusion").self_reported_ai_use;
-        data.total_duration_s = Math.round(
-          (Date.now() - STUDY_START_MS) / 1000,
-        );
+        data.total_duration_s = Math.round((Date.now() - STUDY_START_MS) / 1000);
         data.completed = 1;
         if (STUDY_SETTINGS.PILOT_MODE) {
           data.rushed_rating = last("pilot_questions").rushed_rating;
           data.pilot_comments = last("pilot_questions").pilot_comments;
         }
 
-        var hiddenMs = mainIdeation.reduce(function (s, r) {
-          return s + (r.time_hidden_ms || 0);
-        }, 0);
-        var pastes = all
-          .filter({ trial_kind: "design_ideation" })
-          .values()
-          .reduce(function (s, r) {
-            return s + (r.paste_attempts || 0);
-          }, 0);
-        data.flag_zero_ideas_all =
-          mainTrials.length > 0 &&
-          mainTrials.every(function (r) {
-            return r.n_ideas === 0;
-          })
-            ? 1
-            : 0;
+        var hiddenMs = mainIdeation.reduce(function (s, r) { return s + (r.time_hidden_ms || 0); }, 0);
+        // Paste attempts in the 3 main problems only (practice is excluded)
+        var pastes = mainIdeation.reduce(function (s, r) { return s + (r.paste_attempts || 0); }, 0);
+        data.flag_zero_ideas_all = mainTrials.length > 0 && mainTrials.every(function (r) { return r.n_ideas === 0; }) ? 1 : 0;
         data.flag_attention_fail = data.attention_check_pass === 1 ? 0 : 1;
         data.flag_ai_selfreport = data.self_reported_ai_use === "Yes" ? 1 : 0;
-        data.flag_tab_switch =
-          hiddenMs > STUDY_SETTINGS.FLAG_TAB_HIDDEN_S * 1000 ? 1 : 0;
+        data.flag_tab_switch = hiddenMs > STUDY_SETTINGS.FLAG_TAB_HIDDEN_S * 1000 ? 1 : 0;
         data.flag_paste = pastes > 0 ? 1 : 0;
-        data.flag_speeding =
-          data.total_duration_s < STUDY_SETTINGS.FLAG_SPEEDING_MIN * 60 ? 1 : 0;
+        data.flag_speeding = data.total_duration_s < STUDY_SETTINGS.FLAG_SPEEDING_MIN * 60 ? 1 : 0;
 
         // Fullscreen exits and tab switches across the whole study
         var g = FullscreenGuard.snapshot();
@@ -536,20 +501,42 @@ the full CSV is sent when the study ends.
         data.fs_time_out_ms_total = g.fs_time_out_ms;
         data.tab_n_switches_total = g.tab_n_switches;
         data.tab_time_hidden_ms_total = g.tab_time_hidden_ms;
-        data.fs_n_exits_ideation = mainIdeation.reduce(function (s, r) {
-          return s + (r.fs_n_exits || 0);
-        }, 0);
-        data.fs_time_out_ms_ideation = mainIdeation.reduce(function (s, r) {
-          return s + (r.fs_time_out_ms || 0);
-        }, 0);
-        data.fullscreen_events_json = JSON.stringify(
-          FullscreenGuard.log().fullscreen_events,
-        );
-        data.study_tab_events_json = JSON.stringify(
-          FullscreenGuard.log().tab_events,
-        );
-        data.flag_fullscreen_exit_ideation =
-          data.fs_n_exits_ideation > 0 ? 1 : 0;
+        data.fs_n_exits_ideation = mainIdeation.reduce(function (s, r) { return s + (r.fs_n_exits || 0); }, 0);
+        data.fs_time_out_ms_ideation = mainIdeation.reduce(function (s, r) { return s + (r.fs_time_out_ms || 0); }, 0);
+        data.fullscreen_events_json = JSON.stringify(FullscreenGuard.log().fullscreen_events);
+        data.study_tab_events_json = JSON.stringify(FullscreenGuard.log().tab_events);
+        data.flag_fullscreen_exit_ideation = data.fs_n_exits_ideation > 0 ? 1 : 0;
+
+        // Copy screening, demographics, scale scores and exclusion answers onto
+        // this row, so the participant table has one complete row per person.
+        var copyFields = [
+          "prolific_id_typed",
+          "employment", "student_status", "industry", "industry_other", "job_title", "work_description",
+          "age", "age_valid", "gender", "gender_self", "ethnicity", "ethnicity_list", "ethnicity_specify",
+          "degree", "degree_field", "english_first", "english_fluency", "country",
+          "years_experience", "years_experience_valid", "design_domain", "design_domain_other",
+          "activity_frequency", "genai_use", "genai_frequency",
+          "tlx_mental", "tlx_physical", "tlx_temporal", "tlx_performance", "tlx_effort", "tlx_frustration", "tlx_raw",
+          "mai_knowledge", "mai_regulation", "nfc_mean",
+          "distracted", "follow_dir", "data_use",
+        ];
+        var rows = all.values();
+        copyFields.forEach(function (f) {
+          for (var k = rows.length - 1; k >= 0; k--) {
+            if (rows[k][f] !== undefined && rows[k][f] !== null) { data[f] = rows[k][f]; break; }
+          }
+        });
+        var maiRow = last("mai");
+        var maiKeys = Object.keys(maiRow).filter(function (k) { return /^mai_\d+$/.test(k); });
+        data.mai_mean = maiKeys.length
+          ? maiKeys.reduce(function (s, k) { return s + Number(maiRow[k]); }, 0) / maiKeys.length
+          : null;
+
+        // Per-person summaries of the 3 main problems
+        var mainIdeas = all.filter({ table: "idea", phase: "main" }).values();
+        data.n_ideas_main_total = mainTrials.reduce(function (s, r) { return s + (r.n_ideas || 0); }, 0);
+        data.n_partial_ideas_main = mainIdeas.filter(function (r) { return r.was_partial === 1; }).length;
+
       },
     };
 
@@ -628,40 +615,23 @@ the full CSV is sent when the study ends.
     function getCell() {
       var forced = jsPsych.data.getURLVariable("cell");
       if (forced && CELL_IDS.indexOf(forced) !== -1) {
-        return Promise.resolve({
-          cell_id: forced,
-          method: "url",
-          condition: null,
-        });
+        return Promise.resolve({ cell_id: forced, method: "url", condition: null });
       }
       if (TEST_MODE) {
-        return Promise.resolve({
-          cell_id: null,
-          method: "random",
-          condition: null,
-        });
+        return Promise.resolve({ cell_id: null, method: "random", condition: null });
       }
       var timeout = new Promise(function (resolve) {
-        setTimeout(function () {
-          resolve(null);
-        }, 5000);
+        setTimeout(function () { resolve(null); }, 5000);
       });
       var request = jsPsychExtensionPipe
         .getCondition(STUDY_SETTINGS.DATAPIPE_EXPERIMENT_ID)
         .catch(function (error) {
-          console.warn(
-            "DataPipe condition assignment failed; drawing a random cell",
-            error,
-          );
+          console.warn("DataPipe condition assignment failed; drawing a random cell", error);
           return null;
         });
       return Promise.race([request, timeout]).then(function (condition) {
         if (typeof condition === "number" && condition >= 0) {
-          return {
-            cell_id: CELL_IDS[condition % CELL_IDS.length],
-            method: "datapipe",
-            condition: condition,
-          };
+          return { cell_id: CELL_IDS[condition % CELL_IDS.length], method: "datapipe", condition: condition };
         }
         return { cell_id: null, method: "random", condition: null };
       });
@@ -710,10 +680,7 @@ the full CSV is sent when the study ends.
           var design = buildDesignTimeline(cell.cell_id, cell.method);
           jsPsych.addNodeToEndOfTimeline(restOfStudy(design));
           jsPsych.data.addProperties({ datapipe_condition: cell.condition });
-          jsPsych.finishTrial({
-            cell_id: design.assignment.cell_id,
-            assignment_method: cell.method,
-          });
+          jsPsych.finishTrial({ cell_id: design.assignment.cell_id, assignment_method: cell.method });
         });
       },
     };
@@ -751,10 +718,7 @@ the full CSV is sent when the study ends.
     if (TEST_SECTIONS) {
       window.removeEventListener("beforeunload", warnBeforeLeaving);
       var testCell = jsPsych.data.getURLVariable("cell");
-      var testDesign = buildDesignTimeline(
-        CELL_IDS.indexOf(testCell) !== -1 ? testCell : null,
-        "test",
-      );
+      var testDesign = buildDesignTimeline(CELL_IDS.indexOf(testCell) !== -1 ? testCell : null, "test");
       var SECTIONS = {
         screening: screening,
         instructions: testDesign.instructions,
@@ -766,20 +730,16 @@ the full CSV is sent when the study ends.
         demographics: demographics,
         data_exclusion: data_exclusion,
       };
-      var testTimeline = TEST_SECTIONS.split(",")
-        .map(function (name) {
-          return SECTIONS[name.trim()];
-        })
-        .filter(Boolean);
+      var testTimeline = TEST_SECTIONS.split(",").map(function (name) {
+        return SECTIONS[name.trim()];
+      }).filter(Boolean);
       testTimeline.push({
         type: jsPsychHtmlKeyboardResponse,
         stimulus: "",
         choices: "NO_KEYS",
         trial_duration: 10,
         on_finish: function () {
-          setTimeout(function () {
-            jsPsych.data.displayData("csv");
-          }, 50);
+          setTimeout(function () { jsPsych.data.displayData("csv"); }, 50);
         },
       });
       jsPsych.run(testTimeline);
